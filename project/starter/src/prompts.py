@@ -8,7 +8,8 @@ def get_intent_classification_prompt() -> PromptTemplate:
     """
     return PromptTemplate(
         input_variables=["user_input", "conversation_history"],
-        template="""You are an intent classifier for a document processing assistant.
+        template="""
+You are an intent classifier for a document processing assistant.
 
 Given the user input and conversation history, classify the user's intent into one of these categories:
 - qa: Questions about documents or records that do not require calculations.
@@ -23,11 +24,12 @@ Recent Conversation History:
 
 Analyze the user's request and classify their intent with a confidence score and brief reasoning.
 """
-    )
+)
 
 
 # Q&A System Prompt
-QA_SYSTEM_PROMPT = """You are a helpful document assistant specializing in answering questions about financial and healthcare documents.
+QA_SYSTEM_PROMPT = """
+You are a helpful document assistant specializing in answering questions about financial and healthcare documents.
 
 Your capabilities:
 - Answer specific questions about document content
@@ -45,7 +47,8 @@ Guidelines:
 """
 
 # Summarization System Prompt
-SUMMARIZATION_SYSTEM_PROMPT = """You are an expert document summarizer specializing in financial and healthcare documents.
+SUMMARIZATION_SYSTEM_PROMPT = """
+You are an expert document summarizer specializing in financial and healthcare documents.
 
 Your approach:
 - Extract key information and main points
@@ -61,25 +64,35 @@ Guidelines:
 """
 
 # Calculation System Prompt
-# TODO: Implement the CALCULATION_SYSTEM_PROMPT. Refer to README.md Task 3.2 for details
-CALCULATION_SYSTEM_PROMPT = """"""
+CALCULATION_SYSTEM_PROMPT = """
+You are a document assistant that can extract and calculate certain statistics present in a set of documents.
+
+Your capabilities:
+- You can retrieve documents using the document reader tool
+- You can find relevant documents by their title / type
+- You can find relevant documents matching certain criteria about their attributes (e.g., amoung is higher than $100)
+- You can extract relevant information from the right documents
+- You can compose the extracted information into a tool call (e.g., to sum up the extracted values)
+
+Guidelines:
+1. First search for relevant documents
+2. From each document extract the sought after attribute values and compile them into a calculator tool call
+3. You should use the calculator tool always, no matter how simple the calculation
+"""
 
 
-# TODO: Finish the function to return the correct prompt based on intent type
-# Refer to README.md Task 3.1 for details
+# TODO: Check if intent_type: Literal['qa', 'summarization', 'calculation'] works
 def get_chat_prompt_template(intent_type: str) -> ChatPromptTemplate:
     """
     Get the appropriate chat prompt template based on intent.
     """
-    if intent_type == "qa":
-        system_prompt = QA_SYSTEM_PROMPT
-    elif intent_type ==  # TODO:  Check the intent type value
-        system_prompt =  # TODO: Set system prompt to the correct value based on intent type
-    elif intent_type ==  # TODO: Check the intent type value
-    # TODO: Set system prompt to the correct value based on intent type
-    else:
-        system_prompt = QA_SYSTEM_PROMPT  # Default fallback
+    system_prompt = {
+        'qa': QA_SYSTEM_PROMPT,
+        'summarization': MEMORY_SUMMARY_PROMPT,
+        'calculation': CALCULATION_SYSTEM_PROMPT,
+    }.get(intent_type, QA_SYSTEM_PROMPT)
 
+    # NOTE: This is a good practice to compose a prompt in a structured way
     return ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(system_prompt),
         MessagesPlaceholder("chat_history"),

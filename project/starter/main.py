@@ -1,13 +1,20 @@
 import os
 import sys
 from datetime import datetime
+import openai
+
 from dotenv import load_dotenv
 from print_color import print
+
+import traceback
 
 # Add src to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 from src.assistant import DocumentAssistant
+
+
+openai.api_base = "https://openai.vocareum.com/v1"
 
 
 def print_header():
@@ -119,9 +126,8 @@ def main():
                 if result.get("summary"):
                     print(f"\nCONVERSATION SUMMARY: {result['summary']}", color='cyan')
 
-
             else:
-                print(f"\nError: {result.get('error', 'Unknown error')}", color='red')
+                print(f"\nError: {result.get('error', 'Unknown error')}, traceback: {"".join(traceback.format_tb(result.get('traceback', 'Traceback missing')))}", color='red')
 
         except KeyboardInterrupt:
             print("\n\nGoodbye!", color='blue')

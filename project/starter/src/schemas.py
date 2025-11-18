@@ -2,6 +2,7 @@ from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Literal, TypedDict
 from datetime import datetime
+from enum import Enum
 
 
 class DocumentChunk(BaseModel):
@@ -12,13 +13,16 @@ class DocumentChunk(BaseModel):
     relevance_score: float = Field(default=0.0, description="Relevance score for retrieval")
 
 
-# TODO: Implement the AnswerResponse schema for structured Q&A responses.
-# This schema should include fields for the question, answer, sources, confidence, and timestamp.
-# Refer to README.md Task 1.1 for detailed field requirements.
 class AnswerResponse(BaseModel):
-    """Structured response for Q&A tasks - TO BE IMPLEMENTED"""
-    pass
-
+    """
+    Structured response for Q&A tasks.
+    This schema ensures consistent formatting of answers and tracks which documents were referenced.
+    """
+    question: str = Field(description="The question asked by the user")
+    answer: str = Field(description="The generated answer")
+    sources: List[str] = Field(default_factory=lambda: list, description="List of source document IDs user")
+    confidence: float = Field(description="Confidence score between 0 and 1") #, ge=0.0, le=1.0)
+    timestamp: datetime = Field(description="When the response was generated", default_factory=datetime.now)
 
 
 class SummarizationResponse(BaseModel):
@@ -45,12 +49,24 @@ class UpdateMemoryResponse(BaseModel):
     document_ids: List[str] = Field(default_factory=lambda: list, description="List of documents ids that are relevant to the users last message")
 
 
-# TODO: Implement the UserIntent schema for intent classification.
-# This schema should include fields for intent_type, confidence, and reasoning.
-# Refer to README.md Task 1.2 for detailed field requirements.
+class IntentType(str, Enum):
+    QA = "qa"
+    SUMMARIZATION = "summarization"
+    CALCULATION = "calculation"
+    UNKNOWN = "unknown"
+    
+
 class UserIntent(BaseModel):
-    """User intent classification - TO BE IMPLEMENTED"""
-    pass
+    """
+    User intent classification
+    This schema helps the system understand what type of request the user is making and route it to the appropriate agent.
+    """
+    intent_type: Literal["qa", "summarization", "calculation", "unknown"] = Field(
+        description="The classified intent ('qa', 'summarization', 'calculation', or 'unknown')"
+    )
+    # intent_type: IntentType = Field(description="The classified intent ('qa', 'summarization', 'calculation', or 'unknown')")
+    confidence: str = Field(description="Confidence in classification (float between 0 and 1)") #, ge=0.0, le=1.0)
+    reasoning: str = Field(description="Explanation for the classification")
 
 
 class SessionState(BaseModel):

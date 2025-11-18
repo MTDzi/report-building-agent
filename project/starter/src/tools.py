@@ -59,15 +59,44 @@ class ToolLogger:
             json.dump(self.logs, f, indent=2)
 
 
-# TODO: Implement the calculator tool using the @tool decorator.
-# This tool should safely evaluate mathematical expressions and log its usage.
-# Refer to README.md Task 4.1 for detailed implementation requirements.
 def create_calculator_tool(logger: ToolLogger):
     """
-    Creates a calculator tool - TO BE IMPLEMENTED
+    Creates a calculator tool
     """
-    # Your implementation here
-    pass
+
+    @tool
+    def calculator_tool(mathematical_expression: str) -> float:
+        """
+        Takes a mathematical expression in Python form and calculates it.
+
+        Args:
+            mathematical_expression: String representing a valid Python mathematical expression
+                that will be passed to the eval() function, and the output of it returned by
+                this function. 
+
+        Examples:
+            - "math.sqrt(1 + 2 + 3 + 4)" -> returns: 3.1622776601683795
+            - "sum([i for i in range(100)]) / 100" -> returns: 49.5
+            - "statistics.mean([1, 2, 3, 4, 5])" -> returns: 3
+
+        Returns:
+            The results of the mathematical expression.    
+        """
+        import math
+        import statistics
+        value: float = eval(mathematical_expression)
+
+        logger.log_tool_use(
+            "calculator_tool",
+            {
+                "mathematical_expression": str,
+            },
+            {"return": value},
+        )
+        return str(value)
+
+    return calculator_tool
+
 
 
 def create_document_search_tool(retriever, logger: ToolLogger):
@@ -77,13 +106,13 @@ def create_document_search_tool(retriever, logger: ToolLogger):
 
     @tool
     def document_search(
-            query: str,
-            search_type: Literal["keyword", "type", "amount", "amount_range", "all"] = "keyword",
-            doc_type: Optional[str] = None,
-            min_amount: Optional[float] = None,
-            max_amount: Optional[float] = None,
-            comparison: Optional[Literal["over", "under", "between", "exact", "approximate"]] = None,
-            amount: Optional[float] = None
+        query: str,
+        search_type: Literal["keyword", "type", "amount", "amount_range", "all"] = "keyword",
+        doc_type: Optional[str] = None,
+        min_amount: Optional[float] = None,
+        max_amount: Optional[float] = None,
+        comparison: Optional[Literal["over", "under", "between", "exact", "approximate"]] = None,
+        amount: Optional[float] = None
     ) -> str:
         """
         Search for relevant documents using various criteria. Handles natural language amount queries.

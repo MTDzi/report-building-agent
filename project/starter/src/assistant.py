@@ -15,10 +15,7 @@ from prompts import MEMORY_SUMMARY_PROMPT
 
 
 class DocumentAssistant:
-    """
-    The assistant creates and loads sessions and
-    stores state/session data within a file.
-    """
+    """The assistant creates and loads sessions and stores state/session data within a file."""
 
     def __init__(
             self,
@@ -116,18 +113,17 @@ class DocumentAssistant:
     def process_message(self, user_input: str) -> Dict[str, Any]:
         """Process a user message using the LangGraph workflow."""
 
-#TODO: Complete the config dictionary to set the thread_ud, llm, and tools to the workflow
-        # Refer to README.md Task 2.6 for details
         config = {
             "configurable": {
-                "thread_id": # TODO: Set this to the session id of the current sessions
-                "llm": # TODO Set this to the LLM instance (self.llm)
-                "tools": # TODO Set this to the list of tools
+                "thread_id": self.current_session.session_id,
+                "llm": self.llm, 
+                "tools": self.tools,
             }
         }
 
         if not self.current_session:
             raise ValueError("No active session. Call start_session() first.")
+
         initial_state: AgentState = {
             "messages": [],
             "user_input": user_input,
@@ -170,5 +166,6 @@ class DocumentAssistant:
             return {
                 "success": False,
                 "error": str(e),
-                "response": None
+                "response": None,
+                "traceback": e.__traceback__,
             }
