@@ -103,22 +103,31 @@ def create_calculator_tool(logger: ToolLogger):
         Returns:
             The results of the mathematical expression.    
         """
-        value: float = eval(
-            mathematical_expression,
-            globals=SAFE_BUILTINS,
-            locals=None,
-        )
+        e = None
+        try:
+            value: float = eval(
+                mathematical_expression,
+                globals=SAFE_BUILTINS,
+                locals=None,
+            )
+        except Exception as e:
+            print(f'Exception: {e} encountered in calculator_tool', color='red')
+
+        if e is not None:
+            value = float("nan")
 
         logger.log_tool_use(
             "calculator_tool",
             {
-                "mathematical_expression": str,
+                "mathematical_expression": mathematical_expression,
+                "exception": e,
             },
             {"return": value},
         )
-        assert isinstance(value, numbers.Number), (
-            f"The value {value} is not numeric!"
-        )
+        if not isinstance(value, numbers.Number):
+            print(f"The value {value} is not numeric!", color='red')
+            value = float('nan')
+        
         return str(value)
 
     return calculator_tool

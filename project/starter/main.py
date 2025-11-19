@@ -80,8 +80,8 @@ def main():
     )
 
     # Start session
-    # TODO
-    user_id = "dupa"  #  input("Enter your user ID (or press Enter for 'demo_user'): ").strip() or "demo_user"
+    user_id = input("Enter your user ID (or press Enter for 'demo_user'): ").strip() or "demo_user"
+    # user_id = "dupa"
     session_id = assistant.start_session(user_id)
     print(f"Session started: {session_id}")
 
@@ -92,9 +92,8 @@ def main():
     while True:
         try:
             # Get user input
-            # TODO
-            user_input = "Find documents with amounts over $50,000" #  input("\nEnter Message: ").strip()
-            user_input = "Calculate the average amount over all documents" #  input("\nEnter Message: ").strip()
+            user_input = input("\nEnter Message: ").strip()
+            # user_input = "Calculate the average amount over all documents" #  input("\nEnter Message: ").strip()
 
             if not user_input:
                 continue
