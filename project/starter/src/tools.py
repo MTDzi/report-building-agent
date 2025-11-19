@@ -10,6 +10,27 @@ import re
 import json
 from datetime import datetime
 
+import math
+import statistics
+import numbers
+
+
+SAFE_BUILTINS = {
+    '__builtins__': {
+        'sum': sum,
+        'len': len,
+        'range': range,
+        'min': min,
+        'max': max,
+        'abs': abs,
+        'round': round,
+    },
+
+    # For functions like sin, cos, etc.
+    'math': math,
+    'statistics': statistics,
+}
+
 
 class ToolLogger:
     """Logs tool usage with automatic persistence"""
@@ -82,22 +103,6 @@ def create_calculator_tool(logger: ToolLogger):
         Returns:
             The results of the mathematical expression.    
         """
-        import math
-        import statistics
-        SAFE_BUILTINS = {
-            '__builtins__': {
-                'sum': sum,
-                'len': len,
-                'range': range,
-                'min': min,
-                'max': max,
-                'abs': abs,
-                'round': round,
-            },
-            # You can add the math module here if you need sin/cos/sqrt
-            'math': math,
-            'statistics': statistics,
-        }
         value: float = eval(
             mathematical_expression,
             globals=SAFE_BUILTINS,
@@ -110,6 +115,9 @@ def create_calculator_tool(logger: ToolLogger):
                 "mathematical_expression": str,
             },
             {"return": value},
+        )
+        assert isinstance(value, numbers.Number), (
+            f"The value {value} is not numeric!"
         )
         return str(value)
 
