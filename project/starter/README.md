@@ -1,4 +1,4 @@
-# Document Assistant Project Instructions
+# Document Assistant Project
 
 Welcome to the Document Assistant project!
 
