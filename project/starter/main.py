@@ -80,7 +80,8 @@ def main():
     )
 
     # Start session
-    user_id = input("Enter your user ID (or press Enter for 'demo_user'): ").strip() or "demo_user"
+    # TODO
+    user_id = "dupa"  #  input("Enter your user ID (or press Enter for 'demo_user'): ").strip() or "demo_user"
     session_id = assistant.start_session(user_id)
     print(f"Session started: {session_id}")
 
@@ -91,7 +92,8 @@ def main():
     while True:
         try:
             # Get user input
-            user_input = input("\nEnter Message: ").strip()
+            # TODO
+            user_input = "Find documents with amounts over $50,000" #  input("\nEnter Message: ").strip()
 
             if not user_input:
                 continue

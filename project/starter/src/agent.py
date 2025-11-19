@@ -1,8 +1,8 @@
-from typing import TypedDict, Annotated, List, Dict, Any, Optional, Literal
-
+from typing import TypedDict, Annotated, List, Dict, Any, Optional, Literal, Callable, TypeAlias
+from functools import wraps
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, conlist, ValidationError
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langgraph.prebuilt import create_react_agent, tools_condition, ToolNode
@@ -45,6 +45,50 @@ class AgentState(TypedDict):
     actions_taken: Annotated[List[str], operator.add]
 
 
+class AgentStateValidator(BaseModel):
+    """Temporary model to validate initial state runtime types."""
+    
+    # Validate the types that caused the bug:
+    intent: Optional[UserIntent] 
+    
+    # Validate other standard types if desired (optional)
+    user_input: Optional[str]
+    session_id: Optional[str]
+    user_id: Optional[str]
+    
+    # You can skip the LangGraph-specific fields (messages, actions_taken) 
+    # as their validation is handled by LangGraph's internal checks later.
+    # However, if you include them, they must match the type hints:
+    messages: conlist(Any, min_length=0) # Or just list[Any]
+    tools_used: List[str]
+
+
+NodeFunction: TypeAlias = Callable[[AgentState, RunnableConfig], AgentState]
+
+
+def agent_state_validator(node_function: NodeFunction) -> NodeFunction:
+    """
+    Decorator that validates the LangGraph state (the first argument) 
+    using the AgentStateValidator Pydantic model before executing the node function.
+    """
+
+    @wraps(node_function)
+    def wrapper(state: AgentState, config: RunnableConfig) -> AgentState:
+        if config.get("configurable", {}).get("force_validation") is True:
+            try:
+                # Use the validator model you created earlier
+                AgentStateValidator.model_validate(state)                 
+            except ValidationError as e:
+                # Halt execution or log the error and transition to a fallback node
+                print(f"Validation Error: State failed Pydantic checks in node {node_function.__name__}: {e}")
+                # Raising an exception will typically halt the LangGraph execution for debugging
+                raise
+
+        return node_function(state, config)
+
+    return wrapper
+
+
 def invoke_react_agent(response_schema: type[BaseModel], messages: List[BaseMessage], llm, tools) -> (
 Dict[str, Any], List[str]):
     llm_with_tools = llm.bind_tools(
@@ -63,6 +107,7 @@ Dict[str, Any], List[str]):
     return result, tools_used
 
 
+@agent_state_validator
 def classify_intent(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Classify user intent and update next_step. Also records that this
@@ -99,6 +144,7 @@ def classify_intent(state: AgentState, config: RunnableConfig) -> AgentState:
     }
 
 
+@agent_state_validator
 def qa_agent(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Handle Q&A tasks and record the action.
@@ -126,6 +172,7 @@ def qa_agent(state: AgentState, config: RunnableConfig) -> AgentState:
     }
 
 
+@agent_state_validator
 def summarization_agent(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Handle summarization tasks and record the action.
@@ -153,6 +200,7 @@ def summarization_agent(state: AgentState, config: RunnableConfig) -> AgentState
     }
 
 
+@agent_state_validator
 def calculation_agent(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Handle calculation tasks and record the action.
@@ -180,6 +228,7 @@ def calculation_agent(state: AgentState, config: RunnableConfig) -> AgentState:
     }
 
 
+@agent_state_validator
 def update_memory(state: AgentState, config: RunnableConfig) -> AgentState:
     """
     Update conversation memory and record the action.

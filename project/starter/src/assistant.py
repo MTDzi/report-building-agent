@@ -10,7 +10,7 @@ from langchain_openai import ChatOpenAI
 from schemas import SessionState
 from retrieval import SimulatedRetriever
 from tools import get_all_tools, ToolLogger
-from agent import create_workflow, AgentState
+from agent import create_workflow, AgentState, AgentStateValidator
 from prompts import MEMORY_SUMMARY_PROMPT
 
 
@@ -73,6 +73,14 @@ class DocumentAssistant:
         filepath = os.path.join(self.session_storage_path, f"{session_id}.json")
         with open(filepath, 'r') as f:
             data = json.load(f)
+
+        # This is super-clever! Since SessionState inherits from Pydantic's
+        # BaseModel, it takes care of the conversion of the ISO-format datetime
+        # into a datetime object. We needed the 
+        #   json.dump(..., default=serialize_datetime)
+        # below in _save_session, but when doing the loading of the JSON we resort
+        # to Pydantic to do the de-serialization.
+        # Kudos!
         return SessionState(**data)
 
     def _save_session(self) -> None:
@@ -118,6 +126,8 @@ class DocumentAssistant:
                 "thread_id": self.current_session.session_id,
                 "llm": self.llm, 
                 "tools": self.tools,
+
+                "force_validation": False,
             }
         }
 
@@ -139,20 +149,26 @@ class DocumentAssistant:
             # Initialise actions_taken list for this turn
             "actions_taken": []
         }
+
         try:
             # Invoke the workflow with a thread_id equal to the session_id
             final_state = self.workflow.invoke(initial_state, config=config)
+
             # Update session with new state
             if final_state.get("messages"):
-
                 self.current_session.conversation_history.append(final_state)
                 self.current_session.last_updated = datetime.now()
                 if final_state.get("active_documents"):
+                    # The reason we track the active_documents is for the agent
+                    # to provide SOURCES that it worked with.
+                    # Notice that the `init_state` we start off the workflow with contains
+                    # the self.current_session.document_context as its active_documents.
                     self.current_session.document_context = list(set(
                         self.current_session.document_context +
                         final_state["active_documents"]
                     ))
                 self._save_session()
+
             return {
                 "success": True,
                 "response": final_state.get("messages")[-1].content if final_state.get("messages") else None,
