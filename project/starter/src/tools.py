@@ -84,7 +84,25 @@ def create_calculator_tool(logger: ToolLogger):
         """
         import math
         import statistics
-        value: float = eval(mathematical_expression)
+        SAFE_BUILTINS = {
+            '__builtins__': {
+                'sum': sum,
+                'len': len,
+                'range': range,
+                'min': min,
+                'max': max,
+                'abs': abs,
+                'round': round,
+            },
+            # You can add the math module here if you need sin/cos/sqrt
+            'math': math,
+            'statistics': statistics,
+        }
+        value: float = eval(
+            mathematical_expression,
+            globals=SAFE_BUILTINS,
+            locals=None,
+        )
 
         logger.log_tool_use(
             "calculator_tool",

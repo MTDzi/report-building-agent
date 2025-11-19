@@ -94,6 +94,7 @@ def main():
             # Get user input
             # TODO
             user_input = "Find documents with amounts over $50,000" #  input("\nEnter Message: ").strip()
+            user_input = "Calculate the average amount over all documents" #  input("\nEnter Message: ").strip()
 
             if not user_input:
                 continue
